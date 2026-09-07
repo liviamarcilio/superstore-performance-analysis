@@ -1,0 +1,552 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SuperStore — Painel de Rentabilidade Líquida</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+<style>
+  :root{
+    --bg: #F3EFE6;
+    --paper: #FBF9F4;
+    --ink: #23211D;
+    --ink-soft: #5B5648;
+    --line: #DBD3C1;
+    --navy: #14324D;
+    --navy-soft: #EDF1F4;
+    --green: #1B7A50;
+    --green-soft: #E7F3EC;
+    --red: #B23A2E;
+    --red-soft: #F8E9E6;
+    --amber: #C57F1F;
+    --amber-soft: #FBF0DD;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--bg);
+    color:var(--ink);
+    font-family:'Inter',sans-serif;
+    -webkit-font-smoothing:antialiased;
+    line-height:1.5;
+  }
+  .wrap{max-width:1140px;margin:0 auto;padding:0 28px 80px;}
+  .num{font-family:'IBM Plex Mono',monospace;font-variant-numeric:tabular-nums;}
+
+  /* ---------- Manifest header band ---------- */
+  .manifest-band{
+    background:var(--navy);
+    color:#F3EFE6;
+    padding:18px 0;
+    border-bottom:3px solid var(--amber);
+  }
+  .manifest-band .wrap{display:flex;justify-content:space-between;align-items:baseline;flex-wrap:wrap;gap:8px;}
+  .manifest-id{font-family:'IBM Plex Mono',monospace;font-size:12.5px;letter-spacing:.03em;color:#C9D6DE;}
+  .manifest-id b{color:#fff;}
+
+  /* ---------- Hero ---------- */
+  .hero{padding:52px 0 36px;border-bottom:1px solid var(--line);}
+  .hero-eyebrow{
+    font-family:'Barlow Condensed',sans-serif;
+    font-weight:600;
+    font-size:15px;
+    color:var(--red);
+    margin:0 0 14px;
+  }
+  .hero h1{
+    font-family:'Barlow Condensed',sans-serif;
+    font-weight:700;
+    font-size:clamp(34px,4.4vw,54px);
+    line-height:1.05;
+    letter-spacing:-.01em;
+    margin:0 0 20px;
+    max-width:16ch;
+  }
+  .hero h1 em{
+    font-style:normal;
+    color:var(--red);
+  }
+  .hero p{
+    font-size:17px;
+    color:var(--ink-soft);
+    max-width:62ch;
+    margin:0;
+  }
+  .hero-meta{
+    display:flex;gap:28px;margin-top:28px;flex-wrap:wrap;
+    font-size:13px;color:var(--ink-soft);
+  }
+  .hero-meta strong{color:var(--ink);}
+
+  /* ---------- KPI row ---------- */
+  .kpis{
+    display:grid;grid-template-columns:repeat(4,1fr);gap:1px;
+    background:var(--line);
+    border:1px solid var(--line);
+    margin:36px 0 0;
+  }
+  .kpi{background:var(--paper);padding:22px 22px 20px;}
+  .kpi .label{font-size:12.5px;color:var(--ink-soft);margin-bottom:10px;}
+  .kpi .value{font-family:'IBM Plex Mono',monospace;font-weight:600;font-size:26px;letter-spacing:-.01em;}
+  .kpi .sub{font-size:12px;color:var(--ink-soft);margin-top:6px;}
+  .kpi.hero-kpi{background:var(--red-soft);}
+  .kpi.hero-kpi .value{color:var(--red);}
+  @media (max-width:760px){ .kpis{grid-template-columns:repeat(2,1fr);} }
+  @media (max-width:460px){ .kpis{grid-template-columns:1fr;} }
+
+  /* ---------- Section shell ---------- */
+  section.q{
+    padding:44px 0;
+    border-bottom:1px solid var(--line);
+    display:grid;
+    grid-template-columns:220px 1fr;
+    gap:36px;
+  }
+  @media (max-width:760px){ section.q{grid-template-columns:1fr;gap:16px;} }
+
+  .q-side{position:relative;}
+  .stakeholder{
+    display:inline-flex;align-items:center;gap:8px;
+    font-family:'Barlow Condensed',sans-serif;font-weight:600;font-size:16px;
+    padding:5px 10px 5px 8px;
+    border-left:4px solid var(--tag,var(--navy));
+    background:var(--tag-soft,var(--navy-soft));
+    margin-bottom:14px;
+  }
+  .dot{width:9px;height:9px;border-radius:50%;background:var(--tag,var(--navy));flex:none;}
+  .q-side h3{
+    font-family:'Barlow Condensed',sans-serif;font-weight:600;
+    font-size:19px;line-height:1.25;margin:0;color:var(--ink);
+  }
+  .q-num{
+    font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--ink-soft);
+    display:block;margin-bottom:8px;
+  }
+
+  .q-main .chart-box{
+    background:var(--paper);border:1px solid var(--line);padding:18px 20px 8px;
+  }
+  .chart-title{font-size:13.5px;color:var(--ink-soft);margin:0 0 12px;}
+  canvas{max-width:100%;}
+
+  .portanto{
+    margin-top:14px;
+    padding:12px 16px;
+    background:var(--navy-soft);
+    border-left:3px solid var(--navy);
+    font-size:14.5px;
+  }
+  .portanto b{font-family:'Barlow Condensed',sans-serif;font-weight:700;letter-spacing:.01em;color:var(--navy);}
+  .portanto.negative{background:var(--red-soft);border-color:var(--red);}
+  .portanto.negative b{color:var(--red);}
+
+  /* geography table */
+  table.geo{width:100%;border-collapse:collapse;font-size:14px;}
+  table.geo th{
+    text-align:left;font-family:'Barlow Condensed',sans-serif;font-weight:600;font-size:13px;
+    color:var(--ink-soft);border-bottom:1px solid var(--line);padding:8px 10px;
+  }
+  table.geo td{padding:9px 10px;border-bottom:1px solid var(--line);}
+  table.geo td.num{text-align:right;}
+  table.geo tr:last-child td{border-bottom:none;}
+  .bar-cell{display:flex;align-items:center;gap:8px;}
+  .bar-track{flex:1;height:7px;background:var(--red-soft);position:relative;max-width:140px;}
+  .bar-fill{position:absolute;left:0;top:0;bottom:0;background:var(--red);}
+  .flag{
+    font-size:11px;padding:2px 7px;border-radius:2px;font-family:'Barlow Condensed',sans-serif;font-weight:600;
+    background:var(--amber-soft);color:var(--amber);white-space:nowrap;
+  }
+  .flag.pricing{background:var(--red-soft);color:var(--red);}
+
+  /* ---------- Recommendations ---------- */
+  .rec-block{padding:48px 0;}
+  .rec-block h2{
+    font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:28px;margin:0 0 6px;
+  }
+  .rec-block>p.lede{color:var(--ink-soft);margin:0 0 26px;max-width:60ch;}
+  .rec{
+    display:grid;grid-template-columns:34px 1fr;gap:14px;
+    padding:16px 0;border-top:1px solid var(--line);
+  }
+  .rec:last-child{border-bottom:1px solid var(--line);}
+  .rec-n{font-family:'IBM Plex Mono',monospace;color:var(--ink-soft);font-size:14px;padding-top:2px;}
+  .rec p{margin:0;font-size:15px;}
+  .rec b{color:var(--navy);}
+
+  /* not-confirmed footnote strip */
+  .footnote-strip{
+    background:var(--paper);border:1px dashed var(--line);padding:18px 20px;margin-top:6px;
+    font-size:13.5px;color:var(--ink-soft);
+  }
+  .footnote-strip b{color:var(--ink);}
+
+  /* ---------- Footer ---------- */
+  footer{padding:34px 0 10px;font-size:12.5px;color:var(--ink-soft);}
+  footer .grid{display:grid;grid-template-columns:1fr 1fr;gap:30px;}
+  @media (max-width:700px){footer .grid{grid-template-columns:1fr;}}
+  footer h4{
+    font-family:'Barlow Condensed',sans-serif;font-size:13px;letter-spacing:.02em;color:var(--ink);
+    margin:0 0 8px;font-weight:600;
+  }
+  footer ul{margin:0;padding-left:16px;}
+  footer li{margin-bottom:5px;}
+</style>
+</head>
+<body>
+
+<div class="manifest-band">
+  <div class="wrap">
+    <div class="manifest-id">SUPERSTORE / RELATÓRIO <b>Nº 001</b> — Rentabilidade Líquida</div>
+    <div class="manifest-id">Período <b>jan/2023 – dez/2024</b> · <b>19.955</b> pedidos</div>
+  </div>
+</div>
+
+<div class="wrap">
+
+  <section class="hero">
+    <p class="hero-eyebrow">Para a reunião de diretoria — Sofia · Diego · Ana</p>
+    <h1>O lucro que vocês acompanham <em>não é o lucro real.</em></h1>
+    <p>Depois de descontar o frete, a margem líquida da SuperStore fica perto de zero ou negativa
+      na maioria dos meses do período analisado. A métrica de lucro bruto usada hoje esconde isso —
+      inclusive em dezembro de 2024, que fechou no vermelho.</p>
+    <div class="hero-meta">
+      <span>Fonte: <strong>order.csv + shipping.csv</strong>, limpos e unidos em Python</span>
+      <span>Última atualização: <strong>dashboard gerado a partir do notebook Meta 1–9</strong></span>
+    </div>
+  </section>
+
+  <div class="kpis">
+    <div class="kpi">
+      <div class="label">Receita total</div>
+      <div class="value num">R$ 4,93M</div>
+      <div class="sub">19.955 pedidos, 2023–2024</div>
+    </div>
+    <div class="kpi">
+      <div class="label">Lucro bruto (profit)</div>
+      <div class="value num">R$ 556,3k</div>
+      <div class="sub">margem bruta de 11,28% — a métrica de hoje</div>
+    </div>
+    <div class="kpi hero-kpi">
+      <div class="label">Lucro líquido (pós-frete)</div>
+      <div class="value num">R$ 27,9k</div>
+      <div class="sub">margem real de apenas 0,56%</div>
+    </div>
+    <div class="kpi">
+      <div class="label">Custo logístico total</div>
+      <div class="value num">R$ 528,4k</div>
+      <div class="sub">95% do lucro bruto é consumido pelo frete</div>
+    </div>
+  </div>
+
+  <!-- Q1 — tendência -->
+  <section class="q">
+    <div class="q-side">
+      <span class="q-num">EVIDÊNCIA 01</span>
+      <div class="stakeholder" style="--tag:var(--navy);--tag-soft:var(--navy-soft);"><span class="dot"></span>Sofia — Operações</div>
+      <h3>O pico de fim de ano é lucro de verdade, ou só volume?</h3>
+    </div>
+    <div class="q-main">
+      <div class="chart-box">
+        <p class="chart-title">Lucro bruto vs. líquido, mês a mês (R$, 2023–2024)</p>
+        <canvas id="chartTendencia" height="110"></canvas>
+      </div>
+      <div class="portanto negative">
+        <b>Portanto:</b> a distância entre as duas linhas cresce nos meses de pico. Dez/2023 pareceu
+        R$40,6k de lucro — o líquido real foi R$3,5k. Dez/2024, com R$32,9k de bruto, fechou
+        <b>negativo em -R$4,7k</b>. Comemorar o pico olhando só a linha azul é o erro mais caro que a
+        diretoria pode cometer.
+      </div>
+    </div>
+  </section>
+
+  <!-- Q2 — categoria -->
+  <section class="q">
+    <div class="q-side">
+      <span class="q-num">EVIDÊNCIA 02</span>
+      <div class="stakeholder" style="--tag:var(--green);--tag-soft:var(--green-soft);"><span class="dot"></span>Ana — Logística</div>
+      <h3>Onde o frete corrói a margem por categoria?</h3>
+    </div>
+    <div class="q-main">
+      <div class="chart-box">
+        <p class="chart-title">Lucro bruto vs. líquido por categoria (R$)</p>
+        <canvas id="chartCategoria" height="110"></canvas>
+      </div>
+      <div class="portanto negative">
+        <b>Portanto:</b> <b>Furniture</b> vira prejuízo líquido de -R$59,9k — problema estrutural,
+        presente em todos os modos de envio, inclusive Standard Class. Office Supplies e Technology
+        seguem positivas, mas o frete já consome <b>82%</b> e <b>79%</b> do lucro bruto delas — o
+        problema é sistêmico, não exclusivo de uma categoria.
+      </div>
+    </div>
+  </section>
+
+  <!-- Q3 — desconto -->
+  <section class="q">
+    <div class="q-side">
+      <span class="q-num">EVIDÊNCIA 03</span>
+      <div class="stakeholder" style="--tag:var(--amber);--tag-soft:var(--amber-soft);"><span class="dot"></span>Diego — Comercial</div>
+      <h3>Desconto de fim de mês traz lucro real, ou só volume?</h3>
+    </div>
+    <div class="q-main">
+      <div class="chart-box">
+        <p class="chart-title">Lucro médio por faixa de desconto (R$ por pedido)</p>
+        <canvas id="chartDesconto" height="110"></canvas>
+      </div>
+      <div class="portanto negative">
+        <b>Portanto:</b> lucro médio cai de +R$61 (sem desconto) para -R$104 (desconto acima de
+        60%) — correlação de -0,34. O ponto de virada é <b>~20% de desconto</b>, igual nos três
+        segmentos de cliente (testamos: segmento não explica a diferença).
+      </div>
+      <div class="footnote-strip">
+        <b>Testado e descartado:</b> cruzamos os dados para ver se o desconto realmente aumenta perto
+        do fechamento do mês, como o time comercial acredita — não é o caso. O nível de desconto é
+        praticamente igual em qualquer dia do mês. O problema não é <em>quando</em> o desconto é
+        dado, é <em>quanto</em>.
+      </div>
+    </div>
+  </section>
+
+  <!-- Q4 — prioridade -->
+  <section class="q">
+    <div class="q-side">
+      <span class="q-num">EVIDÊNCIA 04</span>
+      <div class="stakeholder" style="--tag:var(--green);--tag-soft:var(--green-soft);"><span class="dot"></span>Ana — Logística</div>
+      <h3>O modo de envio prioritário compensa financeiramente?</h3>
+    </div>
+    <div class="q-main">
+      <div class="chart-box">
+        <p class="chart-title">Custo médio de frete por prioridade do pedido (R$)</p>
+        <canvas id="chartPrioridade" height="110"></canvas>
+      </div>
+      <div class="portanto negative">
+        <b>Portanto:</b> pedidos <b>Critical</b> custam <b>3,38x</b> mais frete que Medium
+        (R$62,58 vs R$18,50) sem gerar mais receita (+2,1%) nem lucro proporcional. Não é uma
+        política "cega": Critical usa 0% Standard Class — o custo é mecânico, e hoje é 100%
+        absorvido pela SuperStore.
+      </div>
+    </div>
+  </section>
+
+  <!-- Q5 — geografia -->
+  <section class="q">
+    <div class="q-side">
+      <span class="q-num">EVIDÊNCIA 05</span>
+      <div class="stakeholder" style="--tag:var(--navy);--tag-soft:var(--navy-soft);"><span class="dot"></span>Sofia — Operações</div>
+      <h3>Alguma região vende bem, mas não sustenta o resultado?</h3>
+    </div>
+    <div class="q-main">
+      <div class="chart-box">
+        <p class="chart-title">Países e cidades com vendas acima da média e lucro líquido negativo (R$)</p>
+        <table class="geo" id="tabelaGeo">
+          <thead><tr><th>Local</th><th>Situação</th><th style="text-align:right">Lucro líquido</th><th></th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+      <div class="portanto negative">
+        <b>Portanto:</b> dois problemas diferentes exigem soluções diferentes. <b>Turquia</b>
+        (desconto médio de 60%), Filipinas e Rep. Dominicana já operam no vermelho <em>antes</em> do
+        frete — é preço, não logística. Brasil, Indonésia, Itália e Nova Zelândia têm produto
+        saudável, mas o frete anula o ganho. E dentro dos EUA — país lucrativo no total — Filadélfia
+        e Houston praticam desconto médio (32–36%) mais que o dobro da média nacional (15,7%).
+      </div>
+      <div class="footnote-strip">
+        <b>Testado e descartado:</b> segmento de cliente (Consumer/Corporate/Home Office) não
+        explica a inconsistência entre regiões — os três têm desconto, mix de categoria e curva de
+        lucro por desconto praticamente idênticos.
+      </div>
+    </div>
+  </section>
+
+  <div class="rec-block">
+    <h2>Recomendações</h2>
+    <p class="lede">Cada uma amarrada a uma evidência acima — uma ação, um responsável, uma razão baseada em dado, nenhuma por intuição.</p>
+
+    <div class="rec">
+      <div class="rec-n">01</div>
+      <p><b>Recomendamos que a diretoria substitua `profit` bruto por lucro líquido pós-frete</b>
+        como métrica oficial de acompanhamento, porque a margem real é 95% menor que a reportada
+        hoje e isso já mascarou o resultado negativo de dezembro de 2024.</p>
+    </div>
+    <div class="rec">
+      <div class="rec-n">02</div>
+      <p><b>A Ana deveria implementar uma taxa de porte/volumetria moderada e faseada em
+        Furniture</b>, já que a categoria dá prejuízo líquido em todos os modos de envio — com
+        cautela: 67,2% dos pedidos de Furniture vêm com outra categoria no carrinho, lucro conjunto
+        2,3x maior que o déficit, então a ação deve ser monitorada antes de escalar.</p>
+    </div>
+    <div class="rec">
+      <div class="rec-n">03</div>
+      <p>Para o Diego, a ação mais direta é <b>estabelecer um teto de 20% de desconto</b> como regra
+        geral, uma vez que acima desse patamar o lucro médio já é negativo — igualmente nos três
+        segmentos de cliente.</p>
+    </div>
+    <div class="rec">
+      <div class="rec-n">04</div>
+      <p>Também cabe à Ana <b>criar uma taxa de despacho prioritário para pedidos Critical</b>,
+        pois eles custam 3,38x mais frete que Medium sem gerar receita ou lucro proporcional.</p>
+    </div>
+    <div class="rec">
+      <div class="rec-n">05</div>
+      <p>Por fim, sugerimos que a Sofia <b>trate Turquia, Filipinas e Rep. Dominicana como revisão de
+        precificação</b> (já operam no vermelho antes do frete) <b>e aplique taxa de frete regional
+        em Brasil, Indonésia, Itália e Nova Zelândia</b>, além do teto de desconto em
+        Filadélfia/Houston, onde a média local é mais que o dobro da média nacional dos EUA.</p>
+    </div>
+  </div>
+
+  <footer>
+    <div class="grid">
+      <div>
+        <h4>O que ficou de fora</h4>
+        <ul>
+          <li>Segmentação de cliente como causa da inconsistência — testada, não confirmada.</li>
+          <li>Concentração de desconto no fim do mês — testada: o nível de desconto é praticamente igual em qualquer dia do mês.</li>
+          <li>Elasticidade de venda casada em Furniture — risco quantificado, não medido causalmente.</li>
+          <li>Causa física do frete caro em Furniture (peso/volume) — hipótese, base não tem essas colunas.</li>
+        </ul>
+      </div>
+      <div>
+        <h4>Limitações e fonte</h4>
+        <ul>
+          <li>Base: order.csv + shipping.csv, unidos e limpos em Python (Colab), 19.955 pedidos.</li>
+          <li>1 cidade ("Santa Ana") com país não resolvido — ambígua entre 6 países, excluída da Evidência 05.</li>
+          <li>Custo de frete de 11 pares de pedido com produto duplicado legítimo foi somado e dividido igualmente entre as linhas.</li>
+          <li>Resumo executivo e notebook completo (limpeza, validação com IA) disponíveis em anexo.</li>
+        </ul>
+      </div>
+    </div>
+  </footer>
+
+</div>
+
+<script>
+Chart.defaults.font.family = "'Inter', sans-serif";
+Chart.defaults.color = '#5B5648';
+Chart.defaults.font.size = 12;
+
+const NAVY = '#14324D', GREEN='#1B7A50', RED='#B23A2E', AMBER='#C57F1F', LINE='#DBD3C1';
+
+function baseGrid(){
+  return { grid:{color:LINE, drawTicks:false}, border:{display:false} };
+}
+
+// ---- Evidência 1: tendência mensal ----
+new Chart(document.getElementById('chartTendencia'), {
+  type:'line',
+  data:{
+    labels:["2023-01","2023-02","2023-03","2023-04","2023-05","2023-06","2023-07","2023-08","2023-09","2023-10","2023-11","2023-12","2024-01","2024-02","2024-03","2024-04","2024-05","2024-06","2024-07","2024-08","2024-09","2024-10","2024-11","2024-12"],
+    datasets:[
+      {label:'Lucro bruto', data:[8321.8,12417.91,15303.57,12914.38,12181.31,23415.25,5585.0,23713.67,35776.88,25963.42,32709.18,40647.98,10401.64,15000.1,17992.92,17366.97,29876.7,34407.15,15585.39,43563.53,27776.18,30662.88,31731.29,32938.47],
+        borderColor:NAVY, backgroundColor:NAVY, tension:.25, pointRadius:2.5, borderWidth:2.5},
+      {label:'Lucro líquido (pós-frete)', data:[-2222.99,1736.74,2207.38,-98.09,-4261.9,-397.86,-6259.47,1658.51,6112.03,4577.56,-1992.82,3479.18,-3264.11,3606.37,1800.37,599.11,5698.33,6251.25,-1776.86,11524.8,-247.0,5577.14,-1758.45,-4687.38],
+        borderColor:RED, backgroundColor:RED, tension:.25, pointRadius:2.5, borderWidth:2.5}
+    ]
+  },
+  options:{
+    responsive:true,
+    plugins:{legend:{position:'top', align:'end', labels:{boxWidth:12, boxHeight:12, usePointStyle:true, pointStyle:'rectRounded'}}},
+    scales:{
+      x:{...baseGrid(), grid:{display:false}, ticks:{maxRotation:90, minRotation:90, font:{size:10}}},
+      y:{...baseGrid(), ticks:{callback:v=>'R$'+(v/1000).toFixed(0)+'k'}}
+    }
+  }
+});
+
+// ---- Evidência 2: categoria ----
+new Chart(document.getElementById('chartCategoria'), {
+  type:'bar',
+  data:{
+    labels:['Furniture','Office Supplies','Technology'],
+    datasets:[
+      {label:'Lucro bruto', data:[111740.11,189289.17,255224.29], backgroundColor:NAVY, borderRadius:2, maxBarThickness:64},
+      {label:'Lucro líquido', data:[-59853.33,33991.27,53723.92], backgroundColor:RED, borderRadius:2, maxBarThickness:64}
+    ]
+  },
+  options:{
+    responsive:true,
+    plugins:{legend:{position:'top', align:'end', labels:{boxWidth:12, boxHeight:12, usePointStyle:true, pointStyle:'rectRounded'}},
+      tooltip:{callbacks:{label:c=>c.dataset.label+': R$'+c.parsed.y.toLocaleString('pt-BR',{maximumFractionDigits:0})}}},
+    scales:{
+      x:{...baseGrid(), grid:{display:false}},
+      y:{...baseGrid(), ticks:{callback:v=>'R$'+(v/1000).toFixed(0)+'k'}}
+    }
+  }
+});
+
+// ---- Evidência 3: desconto ----
+new Chart(document.getElementById('chartDesconto'), {
+  type:'bar',
+  data:{
+    labels:['0%','0–20%','20–40%','40–60%','60–90%'],
+    datasets:[{
+      label:'Lucro médio por pedido',
+      data:[61.02,44.19,-46.47,-85.15,-103.57],
+      backgroundColor: [61.02,44.19,-46.47,-85.15,-103.57].map(v=>v>=0?GREEN:RED),
+      borderRadius:3, maxBarThickness:70
+    }]
+  },
+  options:{
+    responsive:true,
+    plugins:{legend:{display:false},
+      tooltip:{callbacks:{label:c=>'R$'+c.parsed.y.toFixed(2)}}},
+    scales:{
+      x:{...baseGrid(), grid:{display:false}},
+      y:{...baseGrid(), ticks:{callback:v=>'R$'+v}}
+    }
+  }
+});
+
+// ---- Evidência 4: prioridade ----
+new Chart(document.getElementById('chartPrioridade'), {
+  type:'bar',
+  data:{
+    labels:['Low','Medium','High','Critical'],
+    datasets:[{
+      label:'Frete médio por pedido',
+      data:[24.78,18.50,32.53,62.58],
+      backgroundColor:[AMBER,GREEN,AMBER,RED],
+      borderRadius:3, maxBarThickness:60
+    }]
+  },
+  options:{
+    responsive:true,
+    plugins:{legend:{display:false},
+      tooltip:{callbacks:{label:c=>'R$'+c.parsed.y.toFixed(2)}}},
+    scales:{
+      x:{...baseGrid(), grid:{display:false}},
+      y:{...baseGrid(), ticks:{callback:v=>'R$'+v}}
+    }
+  }
+});
+
+// ---- Evidência 5: geografia (tabela) ----
+const geo = [
+  {local:'Turquia', tipo:'Preço', valor:-45912.90},
+  {local:'Filipinas', tipo:'Preço', valor:-13805.72},
+  {local:'Indonésia', tipo:'Frete', valor:-12441.45},
+  {local:'Rep. Dominicana', tipo:'Preço', valor:-9813.54},
+  {local:'Filadélfia, EUA', tipo:'Preço local', valor:-9709.04},
+  {local:'Itália', tipo:'Frete', valor:-8400.48},
+  {local:'Houston, EUA', tipo:'Preço local', valor:-6286.52},
+  {local:'Brasil', tipo:'Frete', valor:-2734.06},
+  {local:'Nova Zelândia', tipo:'Frete', valor:-2080.01}
+];
+const maxAbs = Math.max(...geo.map(d=>Math.abs(d.valor)));
+const tbody = document.querySelector('#tabelaGeo tbody');
+geo.forEach(d=>{
+  const pct = 100*Math.abs(d.valor)/maxAbs;
+  const flagClass = d.tipo==='Preço'||d.tipo==='Preço local' ? 'flag pricing' : 'flag';
+  const tr = document.createElement('tr');
+  tr.innerHTML = `<td>${d.local}</td>
+    <td><span class="${flagClass}">${d.tipo}</span></td>
+    <td class="num">-R$${Math.abs(d.valor).toLocaleString('pt-BR',{maximumFractionDigits:0})}</td>
+    <td style="width:150px"><div class="bar-cell"><div class="bar-track"><div class="bar-fill" style="width:${pct}%"></div></div></div></td>`;
+  tbody.appendChild(tr);
+});
+</script>
+
+</body>
+</html>
