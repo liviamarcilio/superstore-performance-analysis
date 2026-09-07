@@ -241,7 +241,7 @@ O dashboard executivo (`dashboard_superstore.html`) tem 5 evidências, uma para 
 ## 🔗 Links
 
 - **Notebook (Google Colab):** [analise_superstore.ipynb](https://colab.research.google.com/drive/1Z1bg8PvPOFguFeYX1cqemJ6lOEyHbaD3?usp=sharing)
-- **Dashboard executivo:** [`dashboard_superstore.html`]([./dashboard_superstore.html](https://liviamarcilio.github.io/superstore-performance-analysis/dashboard_superstore.html)) — painel interativo (Artifact), construído com o Claude a partir de um resumo executivo ([`resumo_executivo.md`](./resumo_executivo.md)) sintetizado do notebook completo — não passou por revisão de um Gem
+- **Dashboard executivo:** [`dashboard_superstore.html`]((https://liviamarcilio.github.io/superstore-performance-analysis/dashboard_superstore.html) — painel interativo (Artifact), construído com o Claude a partir de um resumo executivo ([`resumo_executivo.md`](./resumo_executivo.md)) sintetizado do notebook completo — não passou por revisão de um Gem
 - **Instrução do Agente de exploração (Gem):** [`/agente/instrucao_gem.md`](./agente/instrucao_gem.md) — colar no Gemini ao criar o Gem
 
 ---
